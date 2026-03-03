@@ -19,13 +19,17 @@ type Summarizer interface {
 const (
 	summaryPromptTemplate = `Summarize the following conversation history between a user and an AI assistant.
 
+<previous_summary>
+{previous_summary}
+</previous_summary>
+
 <conversation>
 {text}
 </conversation>
 
 Requirements:
 - Preserve key information: user requests, tool calls, and important results
-- Keep the summary under {summary_length} characters
+- Keep the summary under {summary_length} words
 - Output ONLY the summary, no explanations
 - Use concise language, omit redundant details
 
@@ -63,7 +67,6 @@ func NewLLMSummarizer(modelConf shared.ModelConfig, summaryCharLimit int) *LLMSu
 func (s *LLMSummarizer) Summarize(ctx context.Context, runningSummary string, messages []openai.ChatCompletionMessageParamUnion) (string, error) {
 	var b strings.Builder
 
-	b.WriteString(runningSummary)
 	for i := range messages {
 		roleName := GetRoleName(messages[i])
 		contentAny := messages[i].GetContent().AsAny()
@@ -78,6 +81,7 @@ func (s *LLMSummarizer) Summarize(ctx context.Context, runningSummary string, me
 	}
 
 	prompt := strings.ReplaceAll(summaryPromptTemplate, "{text}", b.String())
+	prompt = strings.ReplaceAll(prompt, "{previous_summary}", runningSummary)
 	prompt = strings.ReplaceAll(prompt, "{summary_length}", strconv.Itoa(s.summaryCharLimit))
 
 	resp, err := s.llmClient.Chat.Completions.New(ctx,
