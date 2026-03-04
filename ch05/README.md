@@ -183,7 +183,7 @@ type Policy interface {
 ```go
 type Summarizer interface {
     GetSummaryInputTokenLimit() int
-    Summarize(ctx context.Context, runningSummary string, messages []openai.ChatCompletionMessageParamUnion) (string, error)
+    Summarize(ctx context.Context, runningSummary string, messages []shared.OpenAIMessage) (string, error)
 }
 ```
 

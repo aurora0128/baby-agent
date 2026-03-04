@@ -3,8 +3,9 @@ package context
 import (
 	"log"
 
-	"github.com/openai/openai-go/v3"
 	"github.com/tiktoken-go/tokenizer"
+
+	"babyagent/shared"
 )
 
 var tokenEnc tokenizer.Codec
@@ -17,7 +18,7 @@ func init() {
 	}
 }
 
-func CountTokens(message openai.ChatCompletionMessageParamUnion) int {
+func CountTokens(message shared.OpenAIMessage) int {
 	contentAny := message.GetContent().AsAny()
 	switch contentAny.(type) {
 	case *string:
@@ -28,7 +29,7 @@ func CountTokens(message openai.ChatCompletionMessageParamUnion) int {
 }
 
 // GetRoleName 从消息中获取角色名称（不依赖 GetRole()）
-func GetRoleName(message openai.ChatCompletionMessageParamUnion) string {
+func GetRoleName(message shared.OpenAIMessage) string {
 	if message.OfSystem != nil {
 		return "system"
 	}

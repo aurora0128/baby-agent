@@ -13,7 +13,7 @@ import (
 
 type Summarizer interface {
 	GetSummaryInputTokenLimit() int
-	Summarize(ctx context.Context, runningSummary string, messages []openai.ChatCompletionMessageParamUnion) (string, error)
+	Summarize(ctx context.Context, runningSummary string, messages []shared.OpenAIMessage) (string, error)
 }
 
 const (
@@ -64,7 +64,7 @@ func NewLLMSummarizer(modelConf shared.ModelConfig, summaryCharLimit int) *LLMSu
 	}
 }
 
-func (s *LLMSummarizer) Summarize(ctx context.Context, runningSummary string, messages []openai.ChatCompletionMessageParamUnion) (string, error) {
+func (s *LLMSummarizer) Summarize(ctx context.Context, runningSummary string, messages []shared.OpenAIMessage) (string, error) {
 	var b strings.Builder
 
 	for i := range messages {
@@ -87,7 +87,7 @@ func (s *LLMSummarizer) Summarize(ctx context.Context, runningSummary string, me
 	resp, err := s.llmClient.Chat.Completions.New(ctx,
 		openai.ChatCompletionNewParams{
 			Model: s.modelConf.Model,
-			Messages: []openai.ChatCompletionMessageParamUnion{
+			Messages: []shared.OpenAIMessage{
 				openai.UserMessage(prompt),
 			},
 		},

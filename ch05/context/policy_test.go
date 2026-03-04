@@ -8,11 +8,13 @@ import (
 	"testing"
 
 	"github.com/openai/openai-go/v3"
+
+	"babyagent/shared"
 )
 
 type fakeSummarizer struct {
 	limit int
-	fn    func(running string, messages []openai.ChatCompletionMessageParamUnion) (string, error)
+	fn    func(running string, messages []shared.OpenAIMessage) (string, error)
 	calls []summaryCall
 }
 
@@ -25,7 +27,7 @@ func (f *fakeSummarizer) GetSummaryInputTokenLimit() int {
 	return f.limit
 }
 
-func (f *fakeSummarizer) Summarize(_ context.Context, runningSummary string, messages []openai.ChatCompletionMessageParamUnion) (string, error) {
+func (f *fakeSummarizer) Summarize(_ context.Context, runningSummary string, messages []shared.OpenAIMessage) (string, error) {
 	f.calls = append(f.calls, summaryCall{running: runningSummary, count: len(messages)})
 	return f.fn(runningSummary, messages)
 }
@@ -47,7 +49,7 @@ func (f *fakeStorage) Store(_ context.Context, key string, value string) error {
 	return nil
 }
 
-func buildEngine(msgs []openai.ChatCompletionMessageParamUnion) *Engine {
+func buildEngine(msgs []shared.OpenAIMessage) *Engine {
 	wrapped := make([]messageWrap, 0, len(msgs))
 	total := 0
 	for i := range msgs {
@@ -70,7 +72,7 @@ func sumTokens(messages []messageWrap) int {
 	return total
 }
 
-func contentString(t *testing.T, msg openai.ChatCompletionMessageParamUnion) string {
+func contentString(t *testing.T, msg shared.OpenAIMessage) string {
 	t.Helper()
 	v := msg.GetContent().AsAny()
 	s, ok := v.(*string)
@@ -81,7 +83,7 @@ func contentString(t *testing.T, msg openai.ChatCompletionMessageParamUnion) str
 }
 
 func TestTruncatePolicyApply_NoChangeWhenWithinKeepRecent(t *testing.T) {
-	engine := buildEngine([]openai.ChatCompletionMessageParamUnion{
+	engine := buildEngine([]shared.OpenAIMessage{
 		openai.UserMessage("u1"),
 		openai.AssistantMessage("a1"),
 	})
@@ -100,7 +102,7 @@ func TestTruncatePolicyApply_NoChangeWhenWithinKeepRecent(t *testing.T) {
 }
 
 func TestTruncatePolicyApply_TruncateBeforeLatestUserBoundary(t *testing.T) {
-	engine := buildEngine([]openai.ChatCompletionMessageParamUnion{
+	engine := buildEngine([]shared.OpenAIMessage{
 		openai.AssistantMessage("a0"),
 		openai.UserMessage("u1"),
 		openai.AssistantMessage("a1"),
@@ -135,12 +137,12 @@ func TestTruncatePolicyShouldApply(t *testing.T) {
 func TestSummaryPolicyApply_GeneratesBatchedSummary(t *testing.T) {
 	s := &fakeSummarizer{
 		limit: 1000,
-		fn: func(running string, messages []openai.ChatCompletionMessageParamUnion) (string, error) {
+		fn: func(running string, messages []shared.OpenAIMessage) (string, error) {
 			return running + fmt.Sprintf("[%d]", len(messages)), nil
 		},
 	}
 	p := NewSummaryPolicy(s, 2, 2, 0.8)
-	engine := buildEngine([]openai.ChatCompletionMessageParamUnion{
+	engine := buildEngine([]shared.OpenAIMessage{
 		openai.UserMessage("u1"),
 		openai.AssistantMessage("a1"),
 		openai.UserMessage("u2"),
@@ -175,12 +177,12 @@ func TestSummaryPolicyApply_GeneratesBatchedSummary(t *testing.T) {
 func TestSummaryPolicyApply_EmptySummaryFallsBackToOriginal(t *testing.T) {
 	s := &fakeSummarizer{
 		limit: 1000,
-		fn: func(_ string, _ []openai.ChatCompletionMessageParamUnion) (string, error) {
+		fn: func(_ string, _ []shared.OpenAIMessage) (string, error) {
 			return "", nil
 		},
 	}
 	p := NewSummaryPolicy(s, 1, 10, 0.8)
-	engine := buildEngine([]openai.ChatCompletionMessageParamUnion{
+	engine := buildEngine([]shared.OpenAIMessage{
 		openai.UserMessage("u1"),
 		openai.AssistantMessage("a1"),
 	})
@@ -199,7 +201,7 @@ func TestSummaryPolicyApply_EmptySummaryFallsBackToOriginal(t *testing.T) {
 
 func TestSummaryPolicyShouldApply(t *testing.T) {
 	engine := &Engine{contextTokens: 90, contextWindow: 100}
-	s := &fakeSummarizer{limit: 1000, fn: func(r string, _ []openai.ChatCompletionMessageParamUnion) (string, error) { return r, nil }}
+	s := &fakeSummarizer{limit: 1000, fn: func(r string, _ []shared.OpenAIMessage) (string, error) { return r, nil }}
 	p := NewSummaryPolicy(s, 1, 10, 0.8)
 	if !p.ShouldApply(context.Background(), engine) {
 		t.Fatalf("ShouldApply() = false, want true")
@@ -212,7 +214,7 @@ func TestOffloadPolicyApply_OffloadsLongToolMessagesOnly(t *testing.T) {
 
 	long1 := "1234567890ABCDEFGHIJ"
 	long2 := "abcdefghijklmnopqrst"
-	engine := buildEngine([]openai.ChatCompletionMessageParamUnion{
+	engine := buildEngine([]shared.OpenAIMessage{
 		openai.ToolMessage(long1, "call-1"),
 		openai.UserMessage("u1"),
 		openai.ToolMessage("short", "call-2"),
@@ -248,7 +250,7 @@ func TestOffloadPolicyApply_StoreFailureKeepsOriginalContent(t *testing.T) {
 	p := NewOffloadPolicy(st, 0.8, 0, 5)
 
 	original := "1234567890"
-	engine := buildEngine([]openai.ChatCompletionMessageParamUnion{
+	engine := buildEngine([]shared.OpenAIMessage{
 		openai.ToolMessage(original, "call-1"),
 	})
 

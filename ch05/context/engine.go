@@ -8,10 +8,12 @@ import (
 	"strings"
 
 	"github.com/openai/openai-go/v3"
+
+	"babyagent/shared"
 )
 
 type messageWrap struct {
-	Message openai.ChatCompletionMessageParamUnion
+	Message shared.OpenAIMessage
 	Tokens  int
 }
 
@@ -33,7 +35,7 @@ type Usage struct {
 }
 
 type TurnDraft struct {
-	NewMessages []openai.ChatCompletionMessageParamUnion
+	NewMessages []shared.OpenAIMessage
 }
 
 func NewContextEngine(policies []Policy) *Engine {
@@ -51,8 +53,8 @@ func (c *Engine) Init(systemPrompt string, budget TokenBudget) {
 	}
 }
 
-func (c *Engine) BuildRequestMessages() []openai.ChatCompletionMessageParamUnion {
-	result := make([]openai.ChatCompletionMessageParamUnion, 0, len(c.messages)+1)
+func (c *Engine) BuildRequestMessages() []shared.OpenAIMessage {
+	result := make([]shared.OpenAIMessage, 0, len(c.messages)+1)
 	if c.systemPromptTemplate != "" {
 		result = append(result, openai.SystemMessage(c.BuildSystemPrompt()))
 	}
@@ -62,9 +64,9 @@ func (c *Engine) BuildRequestMessages() []openai.ChatCompletionMessageParamUnion
 	return result
 }
 
-func (c *Engine) StartTurn(userMsg openai.ChatCompletionMessageParamUnion) TurnDraft {
+func (c *Engine) StartTurn(userMsg shared.OpenAIMessage) TurnDraft {
 	return TurnDraft{
-		NewMessages: []openai.ChatCompletionMessageParamUnion{userMsg},
+		NewMessages: []shared.OpenAIMessage{userMsg},
 	}
 }
 

@@ -5,6 +5,8 @@ import (
 	"log"
 
 	"github.com/openai/openai-go/v3"
+
+	"babyagent/shared"
 )
 
 type SummaryPolicy struct {
@@ -57,7 +59,7 @@ func (p *SummaryPolicy) Apply(ctx context.Context, engine *Engine) (PolicyResult
 	batchStart := 0
 
 	for batchStart < summarizeUntilIndex {
-		batchMessages := make([]openai.ChatCompletionMessageParamUnion, 0)
+		batchMessages := make([]shared.OpenAIMessage, 0)
 		batchTokens := 0
 
 		for i := batchStart; i < summarizeUntilIndex; i++ {

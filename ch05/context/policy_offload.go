@@ -89,7 +89,7 @@ func (p *OffloadPolicy) Apply(ctx context.Context, engine *Engine) (PolicyResult
 		newContent := b.String()
 
 		// 修改原始消息链中的消息
-		newMessage := openai.ToolMessage(newContent, engine.messages[i].Message.OfTool.ToolCallID)
+		newMessage := openai.ToolMessage(newContent, *engine.messages[i].Message.GetToolCallID())
 
 		// 计算新消息的 token 数并更新计数
 		newTokens := CountTokens(newMessage)
