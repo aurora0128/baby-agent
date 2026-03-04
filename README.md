@@ -13,7 +13,7 @@
 *   **Language:** Go 1.24+
 *   **LLM Concepts:** Chat Completions API, SSE 流式传输, Function Calling, ReAct Agent Loop
 *   **Advanced AI:** Agentic RAG, Embedding, 向量检索, 重排序, 推理模型
-*   **System Design:** MCP 协议, 上下文工程, Memory 系统, Guardrails 安全防护
+*   **System Design:** MCP 协议, 上下文工程, Memory 系统, Guardrails 安全防护, 技能系统（Skills）
 *   **Engineering:** Web 服务化, 会话管理, LLM 评测, 可观测性（Trace/Metrics/Log）
 
 ---
@@ -94,8 +94,6 @@
 *   **重排序（Rerank）**：使用 Rerank 模型对召回结果重新排序
 *   **搜索工具实现**：Semantic Search Tool 的完整实现
 
----
-
 ### 第八章：沙盒与安全防御（Guardrails）
 
 **目标**：为 Agent 设计安全防护，防止 AI 执行危险操作。
@@ -105,7 +103,19 @@
 *   **确认状态管理**：Allow/Reject/Always Allow 三种确认选项
 *   **Context 取消机制**：用户按 ESC 提前终止 Agent Loop
 
-### 第九章：Web 服务化与 SSE 流式传输🚧
+### 第九章：Agent 技能系统（Skills）
+
+**目标**：让 Agent 学会在不同场景下使用工具的最佳实践。
+
+*   **技能即提示**：技能是描述性文字，指导模型如何使用工具
+*   **渐进式加载**：元数据注入 system prompt，完整内容按需加载
+*   **Markdown 技能文件**：使用 YAML front matter + Markdown 正文定义技能
+*   **技能管理器**：自动发现和加载技能元数据
+*   **load_skill 工具**：LLM 按需加载完整技能内容
+
+---
+
+### 第十章：Web 服务化与 SSE 流式传输🚧
 
 **目标**：将 CLI 核心逻辑剥离，搬运到服务端运行。
 
@@ -114,7 +124,7 @@
 *   **并发管理**：处理多用户同时请求
 *   **中间件设计**：认证、限流、日志等
 
-### 第十章：服务端状态管理🚧
+### 第十一章：服务端状态管理🚧
 
 **目标**：突破单机运行的局限，管理多用户的对话 Session。
 
@@ -123,7 +133,7 @@
 *   **多租户隔离**：确保不同用户的数据隔离
 *   **状态同步**：处理分布式环境下的状态一致性问题
 
-### 第十一章：Agent 评测与自动化测试（LLM Eval）🚧
+### 第十二章：Agent 评测与自动化测试（LLM Eval）🚧
 
 **目标**：摒弃"靠肉眼看效果"的黑盒测试，构建自动化评测流水线。
 
@@ -132,7 +142,7 @@
 *   **自动化评测指标**：响应时间、Token 消耗、准确率等
 *   **Prompt 优化量化**：对比不同 Prompt 版本的实际收益
 
-### 第十二章：生产环境保障（可观测性 Observability）🚧
+### 第十三章：生产环境保障（可观测性 Observability）🚧
 
 **目标**：让工业级 Agent 可控、可观测、可调试。
 
@@ -182,10 +192,11 @@ baby-agent/
 ├── ch06/           # ✅ 第六章：记忆机制
 ├── ch07/           # ✅ 第七章：Agentic RAG
 ├── ch08/           # ✅ 第八章：沙盒与安全防御
-├── ch09/           # 🚧 第九章：Web 服务化与 SSE 流式传输（规划中）
-├── ch10/           # 🚧 第十章：服务端状态管理（规划中）
-├── ch11/           # 🚧 第十一章：Agent 评测与自动化测试（规划中）
-├── ch12/           # 🚧 第十二章：生产环境保障（规划中）
+├── ch09/           # ✅ 第九章：Agent 技能系统
+├── ch10/           # 🚧 第十章：Web 服务化与 SSE 流式传输（规划中）
+├── ch11/           # 🚧 第十一章：服务端状态管理（规划中）
+├── ch12/           # 🚧 第十二章：Agent 评测与自动化测试（规划中）
+├── ch13/           # 🚧 第十三章：生产环境保障（规划中）
 ├── shared/         # 共享代码（配置、MCP 等）
 ├── .env            # 环境变量配置
 └── README.md       # 本文件
@@ -218,6 +229,9 @@ go run ./ch06/tui
 
 # 第八章：完整 Agent（含 Docker 沙盒和工具确认）
 go run ./ch08/tui
+
+# 第九章：技能系统
+go run ./ch09/tui
 ```
 
 第七章是独立的索引和工具实现，可参考 `ch07/README.md` 中的使用示例。
