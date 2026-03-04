@@ -36,3 +36,5 @@ Thumbs.db
 *.env
 
 config.json
+
+.babyagent/

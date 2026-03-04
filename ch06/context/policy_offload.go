@@ -9,7 +9,7 @@ import (
 
 	"github.com/openai/openai-go/v3"
 
-	"babyagent/ch05/storage"
+	"babyagent/ch06/storage"
 	"babyagent/shared"
 )
 
@@ -90,7 +90,7 @@ func (p *OffloadPolicy) Apply(ctx context.Context, engine *Engine) (PolicyResult
 		newContent := b.String()
 
 		// 修改原始消息链中的消息
-		newMessage := openai.ToolMessage(newContent, *engine.messages[i].Message.GetToolCallID())
+		newMessage := openai.ToolMessage(newContent, engine.messages[i].Message.OfTool.ToolCallID)
 
 		// 计算新消息的 token 数并更新计数
 		newTokens := CountTokens(newMessage)
