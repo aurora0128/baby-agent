@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"babyagent/ch05/storage"
+	"babyagent/ch06/storage"
 	"babyagent/shared"
 )
 
