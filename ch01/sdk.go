@@ -10,6 +10,9 @@ import (
 	"babyagent/shared"
 )
 
+// 前期处理都相同 非流式直接返回一个resp[json]
+// 非流式返回一个 chunk
+
 func NonStreamingRequestSDK(ctx context.Context, modelConf shared.ModelConfig, query string) {
 	client := openai.NewClient(option.WithBaseURL(modelConf.BaseURL), option.WithAPIKey(modelConf.ApiKey))
 
@@ -19,7 +22,6 @@ func NonStreamingRequestSDK(ctx context.Context, modelConf shared.ModelConfig, q
 		},
 		Model: modelConf.Model,
 	}
-
 	resp, err := client.Chat.Completions.New(ctx, req)
 	if err != nil {
 		log.Fatalf("failed to send a new completion request: %v", err)
@@ -50,6 +52,7 @@ func StreamingRequestSDK(ctx context.Context, modelConf shared.ModelConfig, quer
 	for stream.Next() {
 		chunk := stream.Current()
 		log.Printf("stream chunk: %s", chunk.RawJSON())
+		//流式一般只在最后一个chunk带上
 		if chunk.Usage.TotalTokens != 0 {
 			log.Printf("token usage: %s", chunk.Usage.RawJSON())
 		}

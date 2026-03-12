@@ -14,11 +14,25 @@ import (
 	"babyagent/shared"
 )
 
+/*
+请求结构
+包含模型 信息 以及 是否流式传输
+其中信息部分 每段都要给模型提供上下文
+*/
 type RequestMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
+type OpenAIChatCompletionRequest struct {
+	Model    string           `json:"model"`
+	Messages []RequestMessage `json:"messages"`
+	Stream   bool             `json:"stream"`
+}
+
+/*
+响应结构
+*/
 type ResponseMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
@@ -47,12 +61,6 @@ type OpenAIChatCompletionStreamChunk struct {
 		Delta ResponseMessage `json:"delta"`
 	} `json:"choices"`
 	Usage *Usage `json:"usage,omitempty"`
-}
-
-type OpenAIChatCompletionRequest struct {
-	Model    string           `json:"model"`
-	Messages []RequestMessage `json:"messages"`
-	Stream   bool             `json:"stream"`
 }
 
 func NonStreamingRequestRawHTTP(ctx context.Context, modelConf shared.ModelConfig, query string) {
@@ -134,14 +142,13 @@ func StreamingRequestRawHTTP(ctx context.Context, modelConf shared.ModelConfig, 
 	scanner := bufio.NewScanner(httpResp.Body)
 	for scanner.Scan() {
 		line := scanner.Text()
-
+		//SSE 空行表示一个事件的结束
 		if line == "" {
 			continue
 		}
 
 		if strings.HasPrefix(line, "data:") {
 			v := strings.TrimPrefix(line, "data:")
-
 			if strings.TrimSpace(v) == "[DONE]" {
 				break
 			}
