@@ -44,7 +44,14 @@ func (a *Agent) execute(ctx context.Context, toolName string, argumentsInJSON st
 }
 
 // Run 提供对于单次用户请求 query 的 tool loop，返回本轮结果的输出。Run 会保持当前对话历史，不同主题的对话轮次应该初始化多个 Agent 实例运行。
+/*
+user: 帮我读取 foo.txt
+assistant: 我要调用 read(path="foo.txt")
+tool: foo.txt 的内容是 ...
+assistant: 我读完了，结论是 ...
+*/
 func (a *Agent) Run(ctx context.Context, query string) (string, error) {
+	// 将当前的提问与历史的会话合并 一起发给llm
 	a.messages = append(a.messages, openai.UserMessage(query))
 
 	var result string
@@ -71,8 +78,8 @@ func (a *Agent) Run(ctx context.Context, query string) (string, error) {
 		}
 		message := resp.Choices[0].Message
 		// 拼接 assistant message 到整体消息链中
+		// 两个类型不一样 所以需要toParam
 		a.messages = append(a.messages, message.ToParam())
-
 		// tool loop 结束，可以返回结果
 		if len(message.ToolCalls) == 0 {
 			result = message.Content

@@ -24,9 +24,20 @@ func (t *BashTool) ToolName() AgentTool {
 	return AgentToolBash
 }
 
+/*
+详细描述每个工具需要什么字段
+*/
 func (t *BashTool) Info() openai.ChatCompletionToolUnionParam {
 	return openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
-		Name:        string(AgentToolBash),
+		Name: string(AgentToolBash),
+		/*
+			本质是返回了一个指针
+			目的是为了区分字符串的特殊情况 “”传了但为空值 以及没传的情况
+			desc := "execute bash command"
+			Description: &desc
+			Name 是必填，直接给字符串就行（类型就是 string）
+			Description 是可选，SDK 设计成 *string，所以用 openai.String(...) 最省事
+		*/
 		Description: openai.String("execute bash command"),
 		Parameters: openai.FunctionParameters{
 			"type": "object",
@@ -55,6 +66,7 @@ func (t *BashTool) Execute(ctx context.Context, argumentsInJSON string) (string,
 	} else {
 		// Linux/macOS: use POSIX sh (more universal than assuming bash exists)
 		cmd = exec.CommandContext(ctx, "sh", "-c", p.Command)
+
 	}
 
 	output, err := cmd.CombinedOutput()
