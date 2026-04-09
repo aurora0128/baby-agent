@@ -3,6 +3,12 @@ import { fetchEventSource } from '@microsoft/fetch-event-source'
 export const USER_ID = 'user_001'
 const BASE = '/api'
 
+interface APIResponse<T> {
+  code: number
+  msg: string
+  data?: T
+}
+
 export interface ConversationVO {
   conversation_id: string
   user_id: string
@@ -45,49 +51,73 @@ export interface SSEMessageVO {
   tool_result?: string
 }
 
-export async function listConversations(): Promise<ConversationVO[]> {
-  const res = await fetch(`${BASE}/conversation?user_id=${USER_ID}`)
-  const json = await res.json()
-  if (json.code !== 0) throw new Error(json.msg)
+interface StreamThreadRunArgs {
+  threadId: string
+  query: string
+  parentMessageId?: string
+  signal?: AbortSignal
+  onEvent: (event: SSEMessageVO) => void
+  onClose: () => void
+}
+
+export async function fetchThreads(): Promise<ConversationVO[]> {
+  const json = await requestJSON<ConversationVO[]>(`${BASE}/conversation?user_id=${USER_ID}`)
   return json.data ?? []
 }
 
-export async function createConversation(title = 'New Chat'): Promise<ConversationVO> {
-  const res = await fetch(`${BASE}/conversation`, {
+export async function createThread(title = 'New Chat'): Promise<ConversationVO> {
+  const json = await requestJSON<ConversationVO>(`${BASE}/conversation`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user_id: USER_ID, title }),
   })
-  const json = await res.json()
-  if (json.code !== 0) throw new Error(json.msg)
+  if (!json.data) throw new Error('Conversation was not returned by the server')
   return json.data
 }
 
-export async function listMessages(conversationId: string): Promise<ChatMessageVO[]> {
-  const res = await fetch(`${BASE}/conversation/${conversationId}/message`)
-  const json = await res.json()
-  if (json.code !== 0) throw new Error(json.msg)
+export async function renameThread(threadId: string, title: string): Promise<never> {
+  void threadId
+  void title
+  throw new Error('renameThread is not implemented by the backend yet')
+}
+
+export async function archiveThread(threadId: string): Promise<never> {
+  void threadId
+  throw new Error('archiveThread is not implemented by the backend yet')
+}
+
+export async function deleteThread(threadId: string): Promise<never> {
+  void threadId
+  throw new Error('deleteThread is not implemented by the backend yet')
+}
+
+export async function fetchThreadMessages(threadId: string): Promise<ChatMessageVO[]> {
+  const json = await requestJSON<ChatMessageVO[]>(`${BASE}/conversation/${threadId}/message`)
   return json.data ?? []
 }
 
-export function streamMessage(
-  conversationId: string,
-  query: string,
-  onEvent: (e: SSEMessageVO) => void,
-  onClose: () => void,
-  parentMessageId?: string,
-): () => void {
+export function streamThreadRun({
+  threadId,
+  query,
+  parentMessageId,
+  signal,
+  onEvent,
+  onClose,
+}: StreamThreadRunArgs): () => void {
   const ctrl = new AbortController()
+  const cleanup = bindAbortSignal(signal, ctrl)
 
-  fetchEventSource(`${BASE}/conversation/${conversationId}/message`, {
+  fetchEventSource(`${BASE}/conversation/${threadId}/message`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user_id: USER_ID, query, parent_message_id: parentMessageId ?? '' }),
     signal: ctrl.signal,
     onmessage(ev) {
-      try { onEvent(JSON.parse(ev.data)) } catch (_) {}
+      const event = parseSSEMessage(ev.data)
+      if (event) onEvent(event)
     },
     onclose() {
+      cleanup()
       onClose()
     },
     onerror(err) {
@@ -97,5 +127,55 @@ export function streamMessage(
     if (err.name !== 'AbortError') console.error('SSE error:', err)
   })
 
-  return () => ctrl.abort()
+  return () => {
+    cleanup()
+    ctrl.abort()
+  }
+}
+
+export const listConversations = fetchThreads
+export const createConversation = createThread
+export const listMessages = fetchThreadMessages
+
+export function streamMessage(
+  conversationId: string,
+  query: string,
+  onEvent: (event: SSEMessageVO) => void,
+  onClose: () => void,
+  parentMessageId?: string,
+): () => void {
+  return streamThreadRun({
+    threadId: conversationId,
+    query,
+    parentMessageId,
+    onEvent,
+    onClose,
+  })
+}
+
+async function requestJSON<T>(input: RequestInfo | URL, init?: RequestInit): Promise<APIResponse<T>> {
+  const res = await fetch(input, init)
+  const json = await res.json() as APIResponse<T>
+  if (json.code !== 0) throw new Error(json.msg)
+  return json
+}
+
+function parseSSEMessage(data: string): SSEMessageVO | null {
+  try {
+    return JSON.parse(data) as SSEMessageVO
+  } catch {
+    return null
+  }
+}
+
+function bindAbortSignal(signal: AbortSignal | undefined, ctrl: AbortController): () => void {
+  if (!signal) return () => {}
+  if (signal.aborted) {
+    ctrl.abort(signal.reason)
+    return () => {}
+  }
+
+  const abort = () => ctrl.abort(signal.reason)
+  signal.addEventListener('abort', abort, { once: true })
+  return () => signal.removeEventListener('abort', abort)
 }
