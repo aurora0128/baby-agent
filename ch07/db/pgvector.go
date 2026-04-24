@@ -30,15 +30,15 @@ type DocumentChunk struct {
 }
 
 // TableName 指定表名
-func (DocumentChunk) TableName() string {
+func (*DocumentChunk) TableName() string {
 	return "document_chunks"
 }
 
 // ToChunk 转换为 shared.Chunk
-func (d *DocumentChunk) ToChunk() shared.Chunk {
-	return shared.Chunk{
+func (d *DocumentChunk) ToChunk() rag.Chunk {
+	return rag.Chunk{
 		Content: d.Content,
-		Meta: shared.Meta{
+		Meta: rag.Meta{
 			DocumentID: d.DocumentID,
 			StartPos:   d.StartPos,
 			EndPos:     d.EndPos,
@@ -114,7 +114,7 @@ func (s *PGVectorStore) initTable() error {
 }
 
 // Insert 插入一个向量点
-func (s *PGVectorStore) Insert(ctx context.Context, vp shared.VectorPoint) error {
+func (s *PGVectorStore) Insert(ctx context.Context, vp rag.VectorPoint) error {
 	if len(vp.Vector) != s.dimension {
 		return fmt.Errorf("vector dimension mismatch: expected %d, got %d", s.dimension, len(vp.Vector))
 	}
@@ -131,7 +131,7 @@ func (s *PGVectorStore) Insert(ctx context.Context, vp shared.VectorPoint) error
 }
 
 // InsertBatch 批量插入向量点
-func (s *PGVectorStore) InsertBatch(ctx context.Context, vps []shared.VectorPoint) error {
+func (s *PGVectorStore) InsertBatch(ctx context.Context, vps []rag.VectorPoint) error {
 	docs := make([]*DocumentChunk, len(vps))
 	for i, vp := range vps {
 		if len(vp.Vector) != s.dimension {
@@ -151,7 +151,7 @@ func (s *PGVectorStore) InsertBatch(ctx context.Context, vps []shared.VectorPoin
 }
 
 // Search 执行向量相似度搜索
-func (s *PGVectorStore) Search(ctx context.Context, queryVector shared.Vector, limit int) ([]shared.VectorPointResult, error) {
+func (s *PGVectorStore) Search(ctx context.Context, queryVector rag.Vector, limit int) ([]rag.VectorPointResult, error) {
 	if len(queryVector) != s.dimension {
 		return nil, fmt.Errorf("query vector dimension mismatch: expected %d, got %d", s.dimension, len(queryVector))
 	}
@@ -180,14 +180,14 @@ func (s *PGVectorStore) Search(ctx context.Context, queryVector shared.Vector, l
 		return nil, err
 	}
 
-	vectorPointResults := make([]shared.VectorPointResult, len(results))
+	vectorPointResults := make([]rag.VectorPointResult, len(results))
 	for i, r := range results {
-		vectorPointResults[i] = shared.VectorPointResult{
-			VectorPoint: shared.VectorPoint{
+		vectorPointResults[i] = rag.VectorPointResult{
+			VectorPoint: rag.VectorPoint{
 				Vector: nil,
-				Chunk: shared.Chunk{
+				Chunk: rag.Chunk{
 					Content: r.Content,
-					Meta: shared.Meta{
+					Meta: rag.Meta{
 						DocumentID: r.DocumentID,
 						StartPos:   r.StartPos,
 						EndPos:     r.EndPos,
@@ -219,14 +219,14 @@ func (s *PGVectorStore) Count(ctx context.Context) (int64, error) {
 }
 
 // GetByDocumentID 获取指定文档的所有文档块
-func (s *PGVectorStore) GetByDocumentID(ctx context.Context, documentID string) ([]shared.Chunk, error) {
+func (s *PGVectorStore) GetByDocumentID(ctx context.Context, documentID string) ([]rag.Chunk, error) {
 	var docs []DocumentChunk
 	err := s.db.WithContext(ctx).Where("document_id = ?", documentID).Find(&docs).Error
 	if err != nil {
 		return nil, err
 	}
 
-	chunks := make([]shared.Chunk, len(docs))
+	chunks := make([]rag.Chunk, len(docs))
 	for i, d := range docs {
 		chunks[i] = d.ToChunk()
 	}
@@ -244,7 +244,7 @@ func (s *PGVectorStore) Close() error {
 }
 
 // vectorToPGVector 将 shared.Vector 转换为 pgvector 格式字符串
-func vectorToPGVector(v shared.Vector) string {
+func vectorToPGVector(v rag.Vector) string {
 	if len(v) == 0 {
 		return "[]"
 	}

@@ -55,7 +55,7 @@ Before running any chapter, set up the environment:
 1. **Copy example configs:**
    ```bash
    cp .env.example .env
-   cp config.example.json config.json
+   cp config.json config.json
    ```
 
 2. **Configure LLM providers** in `config.json`:

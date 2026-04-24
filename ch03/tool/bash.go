@@ -29,6 +29,7 @@ func (t *BashTool) Info() openai.ChatCompletionToolUnionParam {
 		Name:        string(AgentToolBash),
 		Description: openai.String("execute bash command"),
 		Parameters: openai.FunctionParameters{
+			// 本质是一段jsonschama
 			"type": "object",
 			"properties": map[string]any{
 				"command": map[string]any{

@@ -37,6 +37,7 @@ func (s *McpServerConfig) ReplacePlaceholders(replaceMap map[string]string) McpS
 
 	for _, arg := range s.Args {
 		newArg := arg
+		// 相当于进行路由替换 %s->name
 		for k, v := range replaceMap {
 			newArg = strings.ReplaceAll(newArg, k, v)
 		}
@@ -52,7 +53,7 @@ func LoadMcpServerConfig(path string) (map[string]McpServerConfig, error) {
 		return nil, err
 	}
 	serverMap := make(map[string]McpServerConfig)
-
+	// json也是keyValue的结构，把key直接作为map的key...
 	err = json.Unmarshal(content, &serverMap)
 	if err != nil {
 		return nil, err

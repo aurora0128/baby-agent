@@ -53,6 +53,9 @@ func (c *Engine) Init(systemPrompt string, budget TokenBudget) {
 	}
 }
 
+/*
+本质是将当前存储的所有消息都拿出来.先拿systemPrompt 再拿message
+*/
 func (c *Engine) BuildRequestMessages() []shared.OpenAIMessage {
 	result := make([]shared.OpenAIMessage, 0, len(c.messages)+1)
 	if c.systemPromptTemplate != "" {
@@ -108,6 +111,10 @@ func (c *Engine) applyPolicies(ctx context.Context) error {
 		if !policy.ShouldApply(ctx, c) {
 			continue
 		}
+
+		/*
+		  检查两次是为了，其本质是一个vo消息传递。只是去为了传递信息，在tui被消费
+		*/
 		if c.onPolicyEvent != nil {
 			c.onPolicyEvent(policy.Name(), true, nil)
 		}

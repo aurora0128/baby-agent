@@ -5,6 +5,13 @@ import (
 )
 
 // PolicyResult policy 执行结果
+/*
+	type messageWrap struct {
+		Message shared.OpenAIMessage
+		Tokens  int
+	}
+	最终结果要给messageWrap
+*/
 type PolicyResult struct {
 	Messages      []messageWrap // 新的消息列表
 	ContextTokens int           // 新的 context token 计数

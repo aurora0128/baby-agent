@@ -37,7 +37,11 @@ func (p *SummaryPolicy) ShouldApply(ctx context.Context, engine *Engine) bool {
 	return engine.GetContextUsage() > p.UsageThreshold
 }
 
+/*
+summary有两方面的限制，一方面是消息数，另一方面是token数
+*/
 func (p *SummaryPolicy) Apply(ctx context.Context, engine *Engine) (PolicyResult, error) {
+	// 保护措施
 	if len(engine.messages) <= p.KeepRecentMessages {
 		return PolicyResult{
 			Messages:      engine.messages,

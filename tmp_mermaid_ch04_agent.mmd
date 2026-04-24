@@ -1,0 +1,24 @@
+flowchart TD
+    classDef entry fill:#e8f1ff,stroke:#2563eb,stroke-width:2px,color:#0f172a;
+    classDef orchestration fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#111827;
+    classDef domain fill:#ecfccb,stroke:#65a30d,stroke-width:2px,color:#1f2937;
+    classDef data fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#1f2937;
+    classDef external fill:#ffe4e6,stroke:#e11d48,stroke-width:2px,color:#1f2937;
+    classDef async fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#1f2937;
+
+    Query([User Query]) --> Turn[Clone Session Messages]
+    Turn --> Request[Send Streaming Request]
+    Request --> Chunk[Accumulate Chunks]
+    Chunk --> Reason[Emit Reasoning Event]
+    Chunk --> Answer[Emit Content Event]
+    Chunk --> Done{Tool Calls Returned?}
+    Done -->|No| Commit[Persist Messages]
+    Done -->|Yes| Show[Show Tool Call in TUI]
+    Show --> Exec[Execute Matching Tool]
+    Exec --> ToolOut[Append Tool Message]
+    ToolOut --> Request
+    Commit --> Next([Next Turn Ready])
+
+    class Query,Next entry;
+    class Turn,Request,Chunk,Show orchestration;
+    class Reason,Answer,Done,Exec,ToolOut,Commit domain;

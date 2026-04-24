@@ -8,32 +8,32 @@ import (
 	"sync"
 	"time"
 
-	"babyagent/ch07/rag"
+	rag "babyagent/ch07/rag"
 )
 
 // Indexer 索引器，负责将代码仓库索引到向量数据库
 type Indexer struct {
 	rootPath     string
 	fileWalker   *FileWalker
-	chunker      shared.ChunkerService
-	vectorStore  shared.VectorStore
-	embedService shared.EmbeddingService
+	chunker      rag.ChunkerService
+	vectorStore  rag.VectorStore
+	embedService rag.EmbeddingService
 }
 
 // IndexerConfig 索引器配置
 type IndexerConfig struct {
 	RootPath    string
-	ChunkerType shared.ChunkerType
+	ChunkerType rag.ChunkerType
 	MaxLines    int
 	MaxChars    int
 }
 
 // NewIndexer 创建新的索引器
-func NewIndexer(config IndexerConfig, vectorStore shared.VectorStore, embedService shared.EmbeddingService) *Indexer {
+func NewIndexer(config IndexerConfig, vectorStore rag.VectorStore, embedService rag.EmbeddingService) *Indexer {
 	return &Indexer{
 		rootPath:     config.RootPath,
 		fileWalker:   NewFileWalker(),
-		chunker:      shared.NewChunker(config.ChunkerType, config.MaxLines, config.MaxChars),
+		chunker:      rag.NewChunker(config.ChunkerType, config.MaxLines, config.MaxChars),
 		vectorStore:  vectorStore,
 		embedService: embedService,
 	}
@@ -112,6 +112,7 @@ func (idx *Indexer) IndexConcurrent(ctx context.Context, concurrency int) (*Inde
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			// 竞争变量是 result
 			for filePath := range fileChan {
 				fileResult, err := idx.indexFile(ctx, filePath)
 				if err != nil {
@@ -219,8 +220,8 @@ func (idx *Indexer) indexFile(ctx context.Context, filePath string) (*FileIndexR
 }
 
 // embedChunks 批量获取向量嵌入
-func (idx *Indexer) embedChunks(ctx context.Context, chunks []shared.Chunk) ([]shared.VectorPoint, error) {
-	vectorPoints := make([]shared.VectorPoint, len(chunks))
+func (idx *Indexer) embedChunks(ctx context.Context, chunks []rag.Chunk) ([]rag.VectorPoint, error) {
+	vectorPoints := make([]rag.VectorPoint, len(chunks))
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -228,7 +229,7 @@ func (idx *Indexer) embedChunks(ctx context.Context, chunks []shared.Chunk) ([]s
 
 	for i, chunk := range chunks {
 		wg.Add(1)
-		go func(chunkIdx int, c shared.Chunk) {
+		go func(chunkIdx int, c rag.Chunk) {
 			defer wg.Done()
 
 			vector, err := idx.embedService.Embed(ctx, c.Content)
@@ -242,7 +243,7 @@ func (idx *Indexer) embedChunks(ctx context.Context, chunks []shared.Chunk) ([]s
 			}
 
 			mu.Lock()
-			vectorPoints[chunkIdx] = shared.VectorPoint{
+			vectorPoints[chunkIdx] = rag.VectorPoint{
 				Vector: vector,
 				Chunk:  c,
 			}
@@ -260,7 +261,7 @@ func (idx *Indexer) embedChunks(ctx context.Context, chunks []shared.Chunk) ([]s
 }
 
 // Search 在索引中搜索相似内容
-func (idx *Indexer) Search(ctx context.Context, query string, limit int) ([]shared.VectorPointResult, error) {
+func (idx *Indexer) Search(ctx context.Context, query string, limit int) ([]rag.VectorPointResult, error) {
 	queryVector, err := idx.embedService.Embed(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to embed query: %w", err)

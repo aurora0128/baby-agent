@@ -56,6 +56,9 @@ func (a *Agent) ResetSession() {
 }
 
 // RunStreaming 和 Run 基本逻辑一致，但是使用流式请求，并且通过 channel 实现流式输出
+/*
+	stream流处理的1..
+*/
 func (a *Agent) RunStreaming(ctx context.Context, query string, viewCh chan MessageVO) error {
 	// 为本轮次创建新的消息链。这样如果流式过程中失败或者终止了，不会污染历史上下文。
 	messages := make([]openai.ChatCompletionMessageParamUnion, 0, len(a.messages))
@@ -75,7 +78,7 @@ func (a *Agent) RunStreaming(ctx context.Context, query string, viewCh chan Mess
 		for stream.Next() {
 			chunk := stream.Current()
 			acc.AddChunk(chunk)
-
+			//对chunk进行处理
 			if len(chunk.Choices) > 0 {
 				deltaRaw := chunk.Choices[0].Delta
 				// 推理模型会返回 reasoning_content（有些模型使用 reasoning 字段）

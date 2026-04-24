@@ -20,12 +20,13 @@ func main() {
 
 	ctx := context.Background()
 	modelConf := shared.NewModelConfig()
-
+	// 先拿到现有什么mcp，相当于一个通讯录
 	mcpServerMap, err := shared.LoadMcpServerConfig("mcp-server.json")
 	if err != nil {
 		log.Printf("Failed to load MCP server configuration: %v", err)
 	}
 	mcpClients := make([]*ch04.McpClient, 0)
+	// 将网络或者本地发现的mcp，注册到本agent
 	for k, v := range mcpServerMap {
 		mcpClient := ch04.NewMcpToolProvider(k, v)
 		if err := mcpClient.RefreshTools(ctx); err != nil {

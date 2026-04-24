@@ -74,7 +74,7 @@ func (p *OffloadPolicy) Apply(ctx context.Context, engine *Engine) (PolicyResult
 
 		// 计算原始消息的 token 数
 		oldTokens := messages[i].Tokens
-
+		//用时间戳+i来构造key
 		key := p.makeStorageKey(i)
 		if err := p.Storage.Store(ctx, key, *contentStr); err != nil {
 			log.Printf("failed to store offload message: %v", err)

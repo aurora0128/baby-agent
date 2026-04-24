@@ -1,0 +1,33 @@
+flowchart TD
+    classDef entry fill:#e8f1ff,stroke:#2563eb,stroke-width:2px,color:#0f172a;
+    classDef orchestration fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#111827;
+    classDef domain fill:#ecfccb,stroke:#65a30d,stroke-width:2px,color:#1f2937;
+    classDef data fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#1f2937;
+    classDef external fill:#ffe4e6,stroke:#e11d48,stroke-width:2px,color:#1f2937;
+    classDef async fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#1f2937;
+
+    User([User Input]) --> TUI[Bubble Tea TUI]
+    TUI --> Agent[Agent RunStreaming]
+    Agent --> Prompt[System and History]
+    Agent --> ToolList[Build Tool Catalog]
+    ToolList --> Native[Bash Tool]
+    ToolList --> MCP[MCP Clients]
+    MCP --> Config[mcp-server.json]
+    MCP --> Server[(Filesystem MCP Server)]
+    Agent --> LLM[OpenAI Chat Completions]
+    LLM --> Decision{Tool Call?}
+    Decision -->|No| Stream[Stream Answer to TUI]
+    Decision -->|Yes| Dispatch[Execute Tool]
+    Dispatch --> Native
+    Dispatch --> MCP
+    Server --> MCP
+    Dispatch --> ToolMsg[Append Tool Result]
+    ToolMsg --> LLM
+    Stream --> Session[(Agent Message History)]
+
+    class User,TUI entry;
+    class Agent,Prompt,ToolList,Dispatch orchestration;
+    class LLM,Decision,Stream,ToolMsg domain;
+    class Config,Session,Server data;
+    class Native external;
+    class MCP async;

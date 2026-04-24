@@ -27,7 +27,7 @@
 可按下面方式准备：
 
 ```bash
-cp config.example.json config.json
+cp config.json config.json
 ```
 
 `config.json` 示例：

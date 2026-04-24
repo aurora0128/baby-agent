@@ -11,11 +11,10 @@ import (
 )
 
 // 前期处理都相同 非流式直接返回一个resp[json]
-// 非流式返回一个 chunk
+// 流式返回一个 chunk
 
 func NonStreamingRequestSDK(ctx context.Context, modelConf shared.ModelConfig, query string) {
 	client := openai.NewClient(option.WithBaseURL(modelConf.BaseURL), option.WithAPIKey(modelConf.ApiKey))
-
 	req := openai.ChatCompletionNewParams{
 		Messages: []openai.ChatCompletionMessageParamUnion{
 			openai.UserMessage(query),

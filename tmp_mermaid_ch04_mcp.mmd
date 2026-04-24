@@ -1,0 +1,30 @@
+flowchart TD
+    classDef entry fill:#e8f1ff,stroke:#2563eb,stroke-width:2px,color:#0f172a;
+    classDef orchestration fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#111827;
+    classDef domain fill:#ecfccb,stroke:#65a30d,stroke-width:2px,color:#1f2937;
+    classDef data fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#1f2937;
+    classDef external fill:#ffe4e6,stroke:#e11d48,stroke-width:2px,color:#1f2937;
+    classDef async fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#1f2937;
+
+    Boot([Program Startup]) --> Load[Load MCP Config]
+    Load --> Replace[Resolve Workspace Placeholder]
+    Replace --> Connect[Connect MCP Server]
+    Connect --> Transport{Transport Type}
+    Transport -->|stdio| Proc[Spawn Local Process]
+    Transport -->|http| Remote[Open Streamable HTTP]
+    Proc --> Session[Client Session]
+    Remote --> Session
+    Session --> Discover[List Tools]
+    Discover --> Wrap[Wrap as McpTool]
+    Wrap --> Namespace[Prefix Tool Name]
+    Namespace --> Register[Expose to LLM]
+    Register --> Call[CallTool with JSON Args]
+    Call --> Text[Collect Text Content]
+    Text --> Result([Return Tool Result])
+
+    class Boot,Result entry;
+    class Load,Replace,Connect,Session,Discover,Wrap,Register,Call orchestration;
+    class Namespace,Text domain;
+    class Proc,Remote external;
+    class Transport async;
+    class Session data;

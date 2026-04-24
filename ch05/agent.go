@@ -98,6 +98,9 @@ func (a *Agent) RunStreaming(ctx context.Context, query string, viewCh chan Mess
 	defer a.contextEngine.AbortTurn(draft)
 
 	// 为本轮次创建新的消息链。草稿消息在 commit 前不会污染上下文。
+	/*
+		讲上下文的消息全部拿出来
+	*/
 	messages := a.contextEngine.BuildRequestMessages()
 	messages = append(messages, draft.NewMessages...)
 	var usage openai.CompletionUsage
